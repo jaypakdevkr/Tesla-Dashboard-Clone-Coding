@@ -13,7 +13,8 @@ import {
   Bell,
   Bluetooth,
   Camera,
-  Car,
+  ChevronLeft,
+  ChevronRight,
   Clock3,
   CloudFog,
   Disc3,
@@ -918,7 +919,7 @@ function App() {
 
   return (
       <div
-      className={`dashboard-shell ${driveState.cyberMode ? 'cyber-mode' : ''} ${isImmersiveLeftPane ? 'immersive-left-pane' : ''} ${rightPaneMode === 'SETTINGS' ? 'settings-open' : ''}`}
+      className={`dashboard-shell dark-mode ${driveState.cyberMode ? 'cyber-mode' : ''} ${isImmersiveLeftPane ? 'immersive-left-pane' : ''} ${rightPaneMode === 'SETTINGS' ? 'settings-open' : ''}`}
       style={{ '--left-pane-width': `${leftPaneWidthPct}%` } as CSSProperties}
     >
       <TopStatusBar
@@ -1034,7 +1035,6 @@ function App() {
         audioState={audioState}
         onOpenApp={handleOpenDockApp}
         onDriverTempChange={(diff) => changeHvacTemp('driverTemp', diff)}
-        onPassengerTempChange={(diff) => changeHvacTemp('passengerTemp', diff)}
         onVolumeChange={changeVolumeLevel}
         onToggleMute={toggleMute}
       />
@@ -1163,9 +1163,19 @@ interface BottomDockProps {
   audioState: AudioState;
   onOpenApp: (name: string) => void;
   onDriverTempChange: (diff: number) => void;
-  onPassengerTempChange: (diff: number) => void;
   onVolumeChange: (diff: number) => void;
   onToggleMute: () => void;
+}
+
+function DockCarGlyph({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 123 92" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
+      <path
+        d="M21.5203 82.1604C21.355 82.1604 21.1962 82.2254 21.0784 82.3414C20.9605 82.4574 20.893 82.615 20.8903 82.7804C20.8437 85.6337 20.2003 88.3371 18.9603 90.8904C18.888 91.0373 18.7753 91.1605 18.6353 91.2456C18.4954 91.3306 18.334 91.3739 18.1703 91.3704C14.997 91.2971 10.9403 91.2971 6.00033 91.3704C3.36033 91.4104 1.89699 90.1337 1.61033 87.5404C0.290326 75.6204 0.580327 62.3804 0.810327 51.8604C1.01033 43.3304 5.03033 39.4804 10.9503 34.5404C11.0782 34.4362 11.1721 34.2962 11.2201 34.1383C11.268 33.9804 11.2678 33.8119 11.2196 33.6541C11.1713 33.4963 11.077 33.3566 10.9489 33.2526C10.8208 33.1486 10.6646 33.0852 10.5003 33.0704L1.95033 32.2004C1.41803 32.1484 0.923948 31.9008 0.563722 31.5055C0.203496 31.1101 0.00274457 30.5952 0.000325553 30.0604C-0.0496744 24.0204 5.67033 24.1404 9.86033 23.2704C10.0932 23.2206 10.3362 23.2611 10.5404 23.3836C10.7446 23.5061 10.8947 23.7015 10.9603 23.9304L12.4303 28.9904C12.5012 29.2463 12.657 29.4706 12.8722 29.6262C13.0873 29.7819 13.349 29.8597 13.6143 29.8469C13.8796 29.8341 14.1326 29.7314 14.3318 29.5558C14.5309 29.3802 14.6644 29.142 14.7103 28.8804C15.657 23.8937 17.307 18.5771 19.6603 12.9304C22.4537 6.22373 27.7737 2.43373 35.6203 1.5604C42.9603 0.7404 49.6437 0.243736 55.6703 0.0704026C63.6437 -0.162931 72.6837 0.183733 82.7903 1.1104C88.997 1.68373 93.4237 2.74373 96.0703 4.2904C99.7637 6.4504 102.417 10.0504 104.03 15.0904C106.177 21.8104 107.52 26.0504 108.06 27.8104C108.354 28.7837 108.914 29.5971 109.74 30.2504C109.867 30.3494 110.017 30.4129 110.176 30.4342C110.335 30.4555 110.497 30.434 110.645 30.3718C110.793 30.3096 110.921 30.209 111.017 30.0804C111.113 29.9518 111.173 29.7999 111.19 29.6404L111.73 24.2704C111.744 24.1447 111.783 24.023 111.844 23.9126C111.906 23.8022 111.989 23.7054 112.089 23.6279C112.189 23.5504 112.303 23.4938 112.425 23.4616C112.548 23.4294 112.675 23.4222 112.8 23.4404L119.46 24.4204C119.817 24.4723 120.144 24.6414 120.39 24.9004C121.797 26.3937 122.597 28.1604 122.79 30.2004C122.821 30.5236 122.737 30.8475 122.552 31.116C122.368 31.3845 122.095 31.5806 121.78 31.6704C118.547 32.6237 115.417 33.0371 112.39 32.9104C112.178 32.9017 111.969 32.964 111.796 33.0876C111.624 33.2113 111.497 33.3893 111.437 33.5938C111.376 33.7983 111.385 34.0178 111.462 34.2181C111.538 34.4183 111.678 34.5879 111.86 34.7004C114.26 36.1337 116.447 38.0471 118.42 40.4404C121.99 44.7604 122.07 50.6004 122.05 56.3304C122.017 69.7904 121.957 77.9571 121.87 80.8304C121.777 83.9837 121.38 86.8904 120.68 89.5504C120.563 89.9927 120.311 90.3866 119.959 90.6758C119.607 90.965 119.173 91.1346 118.72 91.1604C114.427 91.3937 109.96 91.3871 105.32 91.1404C104.1 91.0737 103.33 90.3037 103.01 88.8304C102.484 86.3904 102.15 84.3904 102.01 82.8304C101.993 82.6467 101.908 82.4761 101.773 82.3521C101.638 82.2282 101.462 82.1598 101.28 82.1604H21.5203ZM61.4603 6.7104C52.867 6.71707 44.7303 7.0804 37.0503 7.8004C33.5303 8.13374 31.107 8.76707 29.7803 9.7004C27.6937 11.1737 26.1737 13.1737 25.2203 15.7004C23.427 20.4271 21.8937 25.1137 20.6203 29.7604C20.584 29.8977 20.583 30.0421 20.6176 30.1799C20.6522 30.3177 20.7212 30.4444 20.8181 30.5483C20.915 30.6522 21.0366 30.7298 21.1717 30.7739C21.3068 30.818 21.4508 30.8271 21.5903 30.8004C23.037 30.5337 24.6137 30.3371 26.3203 30.2104C35.2603 29.5571 46.977 29.2237 61.4703 29.2104C75.9703 29.1971 87.687 29.5137 96.6203 30.1604C98.3337 30.2804 99.9137 30.4737 101.36 30.7404C101.5 30.7671 101.644 30.758 101.779 30.7139C101.914 30.6698 102.036 30.5922 102.133 30.4883C102.229 30.3844 102.298 30.2577 102.333 30.1199C102.368 29.9821 102.367 29.8377 102.33 29.7004C101.05 25.0537 99.507 20.3671 97.7003 15.6404C96.747 13.1137 95.2237 11.1171 93.1303 9.6504C91.8037 8.71707 89.3803 8.08707 85.8603 7.7604C78.1803 7.05373 70.047 6.70374 61.4603 6.7104ZM90.5503 54.9904C90.5327 55.0672 90.5335 55.147 90.5526 55.2235C90.5717 55.2999 90.6086 55.3707 90.6602 55.4302C90.7119 55.4896 90.7769 55.536 90.8499 55.5656C90.9229 55.5952 91.0018 55.6071 91.0803 55.6004C98.6137 55.0671 105.944 54.0604 113.07 52.5804C113.726 52.4437 114.32 52.1025 114.768 51.6062C115.216 51.1099 115.493 50.4844 115.56 49.8204L115.93 46.1604C115.959 45.8871 115.921 45.6109 115.821 45.3551C115.72 45.0993 115.56 44.8713 115.353 44.6902C115.147 44.509 114.9 44.38 114.633 44.3139C114.366 44.2478 114.088 44.2466 113.82 44.3104C108.607 45.5437 103.064 47.2671 97.1903 49.4804C95.0803 50.2804 91.1103 52.4204 90.5503 54.9904ZM32.5203 54.8904C31.9403 52.3204 27.9303 50.2004 25.8103 49.4204C19.897 47.2471 14.3203 45.5671 9.08033 44.3804C8.81218 44.3201 8.53351 44.3245 8.26742 44.3934C8.00133 44.4622 7.75548 44.5935 7.55021 44.7762C7.34495 44.959 7.18619 45.1881 7.08709 45.4444C6.98798 45.7008 6.95139 45.9771 6.98033 46.2504L7.38032 49.9204C7.45266 50.5862 7.73596 51.2118 8.18911 51.7063C8.64225 52.2008 9.24166 52.5385 9.90033 52.6704C17.067 54.0904 24.4303 55.0371 31.9903 55.5104C32.0704 55.5155 32.1507 55.502 32.2245 55.471C32.2984 55.44 32.3638 55.3923 32.4155 55.3319C32.4671 55.2715 32.5036 55.2 32.5218 55.1233C32.54 55.0466 32.5395 54.9668 32.5203 54.8904Z"
+        fill="currentColor"
+      />
+    </svg>
+  );
 }
 
 function BottomDock({
@@ -1175,7 +1185,6 @@ function BottomDock({
   audioState,
   onOpenApp,
   onDriverTempChange,
-  onPassengerTempChange,
   onVolumeChange,
   onToggleMute
 }: BottomDockProps) {
@@ -1204,16 +1213,16 @@ function BottomDock({
         onClick={() => onOpenApp('CAR')}
         disabled={disabled}
       >
-        <Car size={22} className="dock-icon-image dock-icon-svg" />
+        <DockCarGlyph className="dock-icon-image dock-icon-svg" />
       </button>
 
       <div className="dock-temp-control">
         <button className="dock-chevron" onClick={() => onDriverTempChange(-1)} disabled={disabled}>
-          {'<'}
+          <ChevronLeft size={25} strokeWidth={2.1} />
         </button>
         <span className="dock-temp-value">{climateState.driverTemp}</span>
         <button className="dock-chevron" onClick={() => onDriverTempChange(1)} disabled={disabled}>
-          {'>'}
+          <ChevronRight size={25} strokeWidth={2.1} />
         </button>
       </div>
 
@@ -1235,33 +1244,20 @@ function BottomDock({
               <shortcut.icon className="dock-shortcut-icon-svg" size={18} />
             ) : null}
             {!shortcut.iconSrc && !shortcut.icon ? shortcut.shortLabel : null}
+            {activeShortcut === shortcut.id ? <span className="dock-shortcut-indicator" /> : null}
           </button>
         ))}
       </div>
 
-      <div className="dock-temp-control">
-        <button
-          className="dock-chevron"
-          onClick={() => onPassengerTempChange(-1)}
-          disabled={disabled}
-        >
-          {'<'}
-        </button>
-        <span className="dock-temp-value">{climateState.passengerTemp}</span>
-        <button className="dock-chevron" onClick={() => onPassengerTempChange(1)} disabled={disabled}>
-          {'>'}
-        </button>
-      </div>
-
       <div className="dock-volume-control">
         <button className="dock-chevron" onClick={() => onVolumeChange(-30)} disabled={disabled}>
-          {'<'}
+          <ChevronLeft size={25} strokeWidth={2.1} />
         </button>
-        <button className="dock-main-icon dock-volume-icon" onClick={onToggleMute} disabled={disabled}>
-          {isMuted ? <VolumeX size={18} className="dock-icon-svg" /> : <Volume2 size={18} className="dock-icon-svg" />}
+        <button className="dock-volume-center" onClick={onToggleMute} disabled={disabled}>
+          {isMuted ? <VolumeX size={29} className="dock-icon-svg" /> : <Volume2 size={29} className="dock-icon-svg" />}
         </button>
         <button className="dock-chevron" onClick={() => onVolumeChange(30)} disabled={disabled}>
-          {'>'}
+          <ChevronRight size={25} strokeWidth={2.1} />
         </button>
       </div>
     </footer>
@@ -1852,30 +1848,89 @@ function RightPane({
   onSettingsCategoryChange,
   onSettingChange
 }: RightPaneProps) {
-  if (mode === 'SETTINGS') {
-    return (
-      <SettingsPane
-        settingsState={settingsState}
-        onCategoryChange={onSettingsCategoryChange}
-        onSettingChange={onSettingChange}
-      />
-    );
-  }
+  const isOverlayMode = mode !== 'MAP';
+  const [overlayOffsetY, setOverlayOffsetY] = useState(0);
+  const [isOverlayDragging, setIsOverlayDragging] = useState(false);
+  const overlayDragRef = useRef<{ startY: number } | null>(null);
 
-  if (mode === 'APP') {
-    return <AppPane appName={selectedAppName} onBackToMap={onActivateMap} />;
-  }
+  useEffect(() => {
+    overlayDragRef.current = null;
+    setIsOverlayDragging(false);
+    setOverlayOffsetY(0);
+  }, [mode]);
+
+  const startOverlayDrag = (event: PointerEvent<HTMLDivElement>) => {
+    if (!isOverlayMode) {
+      return;
+    }
+    const target = event.target as HTMLElement;
+    if (!target.closest('[data-pane-drag-handle="true"]')) {
+      return;
+    }
+    overlayDragRef.current = { startY: event.clientY };
+    setIsOverlayDragging(true);
+    event.currentTarget.setPointerCapture(event.pointerId);
+  };
+
+  const moveOverlayDrag = (event: PointerEvent<HTMLDivElement>) => {
+    if (!overlayDragRef.current) {
+      return;
+    }
+    const deltaY = event.clientY - overlayDragRef.current.startY;
+    setOverlayOffsetY(clamp(deltaY, 0, 520));
+  };
+
+  const endOverlayDrag = () => {
+    if (!overlayDragRef.current) {
+      return;
+    }
+    const shouldDismiss = overlayOffsetY > 110;
+    overlayDragRef.current = null;
+    setIsOverlayDragging(false);
+    setOverlayOffsetY(0);
+    if (shouldDismiss) {
+      onActivateMap();
+    }
+  };
 
   return (
-    <MapPane
-      navigationState={navigationState}
-      searchValue={searchValue}
-      mapViewport={mapViewport}
-      onSearchClick={onSearchClick}
-      onEndTrip={onEndTrip}
-      onMapViewportChange={onMapViewportChange}
-      onQuickDestination={onQuickDestination}
-    />
+    <section className="right-pane-stack">
+      <MapPane
+        navigationState={navigationState}
+        searchValue={searchValue}
+        mapViewport={mapViewport}
+        onSearchClick={onSearchClick}
+        onEndTrip={onEndTrip}
+        onMapViewportChange={onMapViewportChange}
+        onQuickDestination={onQuickDestination}
+      />
+
+      {mode !== 'MAP' && (
+        <div
+          className={`right-overlay-pane ${mode === 'APP' ? 'app' : 'settings'} ${isOverlayDragging ? 'dragging' : ''}`}
+          style={{ transform: `translateY(${overlayOffsetY}px)` }}
+          onPointerDown={startOverlayDrag}
+          onPointerMove={moveOverlayDrag}
+          onPointerUp={endOverlayDrag}
+          onPointerCancel={endOverlayDrag}
+        >
+          <div className="pane-drag-region" data-pane-drag-handle="true">
+            <span className="pane-drag-region-bar" data-pane-drag-handle="true" />
+          </div>
+          <div className="right-overlay-content">
+            {mode === 'SETTINGS' ? (
+              <SettingsPane
+                settingsState={settingsState}
+                onCategoryChange={onSettingsCategoryChange}
+                onSettingChange={onSettingChange}
+              />
+            ) : (
+              <AppPane appName={selectedAppName} onBackToMap={onActivateMap} />
+            )}
+          </div>
+        </div>
+      )}
+    </section>
   );
 }
 
