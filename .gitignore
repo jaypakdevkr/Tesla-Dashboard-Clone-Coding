@@ -1,0 +1,12 @@
+# dependencies
+node_modules/
+
+# build outputs
+dist/
+
+# TypeScript build info
+*.tsbuildinfo
+
+# transient compiled config artifacts
+vite.config.js
+vite.config.d.ts
