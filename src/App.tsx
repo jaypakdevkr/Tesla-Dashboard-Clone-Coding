@@ -69,6 +69,7 @@ import energyIcon from './assets/reference/teslaui/icons/energy.svg';
 import spotifyIcon from './assets/reference/teslaui/icons/spotify.svg';
 import theaterIcon from './assets/reference/teslaui/assets/png/theather.png';
 import tireCarImage from './assets/reference/teslaui/assets/png/whichTire-car-dark.png';
+import mediaCoverImage from './assets/reference/teslaui/assets/png/a-perfect-world.webp';
 import modelYImage from './assets/reference/teslaui/compositor/MTY70_PPSW_WY21A_IPW10__my.png';
 import cybercabImage from './assets/reference/teslaui/compositor/cybercab.png';
 
@@ -520,9 +521,14 @@ function App() {
   const isOverlayBlocking = overlay.isLauncherOpen || overlay.isKeyboardOpen;
   const isImmersiveLeftPane = leftPaneWidthPct >= 96;
   const appearanceSetting = String(settingsState.values['display-appearance'] ?? 'Light').toLowerCase();
-  const isAppearanceDark =
-    appearanceSetting === 'dark' || (appearanceSetting === 'auto' && systemPrefersDark);
-  const isDarkMode = driveState.cyberMode || isAppearanceDark;
+  const resolvedAppearance =
+    appearanceSetting === 'dark' || appearanceSetting === 'light'
+      ? appearanceSetting
+      : systemPrefersDark
+        ? 'dark'
+        : 'light';
+  const isDarkMode = resolvedAppearance === 'dark';
+  const isImmersiveLightMode = isImmersiveLeftPane && !isDarkMode;
 
   useEffect(() => {
     if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
@@ -943,7 +949,7 @@ function App() {
 
   return (
       <div
-      className={`dashboard-shell ${isDarkMode ? 'dark-mode' : ''} ${driveState.cyberMode ? 'cyber-mode' : ''} ${isImmersiveLeftPane ? 'immersive-left-pane' : ''} ${rightPaneMode === 'SETTINGS' ? 'settings-open' : ''}`}
+      className={`dashboard-shell ${isDarkMode ? 'dark-mode' : ''} ${driveState.cyberMode ? 'cyber-mode' : ''} ${isImmersiveLeftPane ? 'immersive-left-pane' : ''} ${isImmersiveLightMode ? 'immersive-light-mode' : ''} ${rightPaneMode === 'SETTINGS' ? 'settings-open' : ''}`}
       style={{ '--left-pane-width': `${leftPaneWidthPct}%` } as CSSProperties}
     >
       <TopStatusBar
@@ -1662,19 +1668,26 @@ function MediaMiniPlayerCard({
             transform: `translateX(calc(${carouselIndex * -100}% + ${swipeOffsetX}px))`
           }}
         >
-          <section className="media-slide">
+          <section className="media-slide media-slide-main">
             <div className="media-header">
-              <div className="media-cover" />
+              <div className="media-cover">
+                <img
+                  src={mediaCoverImage}
+                  alt={mediaState.track}
+                  className="media-cover-image"
+                  draggable={false}
+                />
+              </div>
               <div className="media-track-meta">
                 <div className="media-track-meta-top">
                   <strong>{mediaState.track}</strong>
                   {isImmersive && (
                     <div className="media-meta-actions">
                       <button className="media-control icon subtle" aria-label="shuffle">
-                        <Shuffle size={15} />
+                        <Shuffle size={24} />
                       </button>
                       <button className="media-control icon subtle" aria-label="repeat">
-                        <Repeat2 size={15} />
+                        <Repeat2 size={24} />
                       </button>
                     </div>
                   )}
@@ -1707,31 +1720,37 @@ function MediaMiniPlayerCard({
 
             <div className="media-controls">
               <button className="media-control icon" onClick={onPrev} aria-label="previous">
-                <SkipBack size={16} />
+                <SkipBack size={isImmersive ? 24 : 16} />
               </button>
-              <button className="media-control icon" onClick={onTogglePlay} aria-label="play pause">
-                {mediaState.isPlaying ? <Pause size={16} /> : <Play size={16} />}
+              <button className="media-control media-control-play icon" onClick={onTogglePlay} aria-label="play pause">
+                {mediaState.isPlaying ? <Pause size={isImmersive ? 28 : 16} /> : <Play size={isImmersive ? 28 : 16} />}
               </button>
               <button className="media-control icon" onClick={onNext} aria-label="next">
-                <SkipForward size={16} />
+                <SkipForward size={isImmersive ? 24 : 16} />
               </button>
               <button className="media-control icon subtle" onClick={onToggleFavorite} aria-label="favorite">
-                <Heart size={16} fill={mediaState.isFavorite ? 'currentColor' : 'none'} />
+                <Heart size={isImmersive ? 24 : 16} fill={mediaState.isFavorite ? 'currentColor' : 'none'} />
               </button>
               <button
                 className="media-control icon subtle"
-                onClick={canExpand ? onToggleExpanded : undefined}
+                onClick={
+                  isImmersive
+                    ? () => setCarouselIndex(1)
+                    : canExpand
+                      ? onToggleExpanded
+                      : undefined
+                }
                 aria-label="equalizer"
-                disabled={!canExpand}
+                disabled={!isImmersive && !canExpand}
               >
-                <SlidersHorizontal size={16} />
+                <SlidersHorizontal size={isImmersive ? 24 : 16} />
               </button>
               <button
                 className="media-control icon subtle"
                 onClick={() => setCarouselIndex(1)}
                 aria-label="open next panel"
               >
-                <Search size={16} />
+                <Search size={isImmersive ? 24 : 16} />
               </button>
             </div>
           </section>
@@ -1824,16 +1843,16 @@ function ImmersiveNavigationCard({
   return (
     <article className="immersive-nav-card">
       <button className="immersive-nav-search" onClick={onSearchClick}>
-        <Search size={20} />
+        <Search size={28} />
         <span>{searchValue.trim() ? searchValue : 'Navigate'}</span>
       </button>
       <div className="immersive-nav-actions">
         <button onClick={() => onQuickDestination('Home')}>
-          <House size={18} />
+          <House size={24} />
           <span>Home</span>
         </button>
         <button onClick={() => onQuickDestination('Work')}>
-          <BriefcaseBusiness size={18} />
+          <BriefcaseBusiness size={24} />
           <span>Work</span>
         </button>
       </div>
