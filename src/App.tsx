@@ -69,7 +69,7 @@ import energyIcon from './assets/reference/teslaui/icons/energy.svg';
 import spotifyIcon from './assets/reference/teslaui/icons/spotify.svg';
 import theaterIcon from './assets/reference/teslaui/assets/png/theather.png';
 import tireCarImage from './assets/reference/teslaui/assets/png/whichTire-car-dark.png';
-import modelYRedImage from './assets/reference/teslaui/compositor/MTY70_PR01_WY21A_IPW10__my.png';
+import modelYImage from './assets/reference/teslaui/compositor/MTY70_PPSW_WY21A_IPW10__my.png';
 import cybercabImage from './assets/reference/teslaui/compositor/cybercab.png';
 
 type RightPaneMode = 'MAP' | 'SETTINGS' | 'APP';
@@ -285,7 +285,7 @@ const INITIAL_MEDIA: MediaState = {
 };
 
 const INITIAL_SETTINGS: SettingsState = {
-  activeCategory: 'CONTROLS',
+  activeCategory: 'DYNAMICS',
   values: {
     'controls-headlights': 'AUTO',
     'controls-wipers-mode': 'AUTO',
@@ -300,12 +300,12 @@ const INITIAL_SETTINGS: SettingsState = {
     'controls-mirror-angle': 0,
     'controls-steering-height': 0,
     'controls-steering-reach': 0,
-    'dynamics-acceleration': 'STANDARD',
-    'dynamics-steering-mode': 'STANDARD',
-    'dynamics-stopping-mode': 'HOLD',
+    'dynamics-acceleration': 'Standard',
+    'dynamics-steering-mode': 'Standard',
+    'dynamics-stopping-mode': 'Hold',
     'dynamics-slip-start': false,
     'dynamics-track-mode': false,
-    'dynamics-regen-braking': true,
+    'dynamics-regen-braking': false,
     'charging-charge-limit': 80,
     'charging-current-amps': 30,
     'charging-scheduled-charging': false,
@@ -343,7 +343,7 @@ const INITIAL_SETTINGS: SettingsState = {
     'seats-rear-heaters': true,
     'seats-seatbelt-reminder': true,
     'display-brightness': 72,
-    'display-appearance': 'AUTO',
+    'display-appearance': 'Light',
     'display-night-shift': true,
     'display-distance-unit': 'MI',
     'display-temperature-unit': 'F',
@@ -508,12 +508,36 @@ function App() {
     cyberMode: false
   });
   const [leftPaneWidthPct, setLeftPaneWidthPct] = useState(33.5);
+  const [systemPrefersDark, setSystemPrefersDark] = useState(() =>
+    typeof window !== 'undefined' && typeof window.matchMedia === 'function'
+      ? window.matchMedia('(prefers-color-scheme: dark)').matches
+      : false
+  );
   const mainSplitPaneRef = useRef<HTMLElement | null>(null);
   const paneResizeRef = useRef<{ startX: number; widthPct: number } | null>(null);
   const cKeyDownAtRef = useRef<number | null>(null);
 
   const isOverlayBlocking = overlay.isLauncherOpen || overlay.isKeyboardOpen;
   const isImmersiveLeftPane = leftPaneWidthPct >= 96;
+  const appearanceSetting = String(settingsState.values['display-appearance'] ?? 'Light').toLowerCase();
+  const isAppearanceDark =
+    appearanceSetting === 'dark' || (appearanceSetting === 'auto' && systemPrefersDark);
+  const isDarkMode = driveState.cyberMode || isAppearanceDark;
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+      return;
+    }
+
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const onChange = (event: MediaQueryListEvent) => {
+      setSystemPrefersDark(event.matches);
+    };
+
+    setSystemPrefersDark(mediaQuery.matches);
+    mediaQuery.addEventListener('change', onChange);
+    return () => mediaQuery.removeEventListener('change', onChange);
+  }, []);
 
   useEffect(() => {
     if (!mediaState.isPlaying) {
@@ -919,7 +943,7 @@ function App() {
 
   return (
       <div
-      className={`dashboard-shell dark-mode ${driveState.cyberMode ? 'cyber-mode' : ''} ${isImmersiveLeftPane ? 'immersive-left-pane' : ''} ${rightPaneMode === 'SETTINGS' ? 'settings-open' : ''}`}
+      className={`dashboard-shell ${isDarkMode ? 'dark-mode' : ''} ${driveState.cyberMode ? 'cyber-mode' : ''} ${isImmersiveLeftPane ? 'immersive-left-pane' : ''} ${rightPaneMode === 'SETTINGS' ? 'settings-open' : ''}`}
       style={{ '--left-pane-width': `${leftPaneWidthPct}%` } as CSSProperties}
     >
       <TopStatusBar
@@ -1419,7 +1443,7 @@ function DrivingVisualization({
 }: DrivingVisualizationProps) {
   const [vehicleYaw, setVehicleYaw] = useState(0);
   const dragRef = useRef<{ startX: number; initialYaw: number } | null>(null);
-  const vehicleImageSrc = driveState.cyberMode ? cybercabImage : modelYRedImage;
+  const vehicleImageSrc = driveState.cyberMode ? cybercabImage : modelYImage;
 
   useEffect(() => {
     setVehicleYaw(0);
@@ -1848,7 +1872,17 @@ function RightPane({
   onSettingsCategoryChange,
   onSettingChange
 }: RightPaneProps) {
-  const isOverlayMode = mode !== 'MAP';
+  if (mode === 'SETTINGS') {
+    return (
+      <SettingsPane
+        settingsState={settingsState}
+        onCategoryChange={onSettingsCategoryChange}
+        onSettingChange={onSettingChange}
+      />
+    );
+  }
+
+  const isOverlayMode = mode === 'APP';
   const [overlayOffsetY, setOverlayOffsetY] = useState(0);
   const [isOverlayDragging, setIsOverlayDragging] = useState(false);
   const overlayDragRef = useRef<{ startY: number } | null>(null);
@@ -1905,9 +1939,9 @@ function RightPane({
         onQuickDestination={onQuickDestination}
       />
 
-      {mode !== 'MAP' && (
+      {mode === 'APP' && (
         <div
-          className={`right-overlay-pane ${mode === 'APP' ? 'app' : 'settings'} ${isOverlayDragging ? 'dragging' : ''}`}
+          className={`right-overlay-pane app ${isOverlayDragging ? 'dragging' : ''}`}
           style={{ transform: `translateY(${overlayOffsetY}px)` }}
           onPointerDown={startOverlayDrag}
           onPointerMove={moveOverlayDrag}
@@ -1918,15 +1952,7 @@ function RightPane({
             <span className="pane-drag-region-bar" data-pane-drag-handle="true" />
           </div>
           <div className="right-overlay-content">
-            {mode === 'SETTINGS' ? (
-              <SettingsPane
-                settingsState={settingsState}
-                onCategoryChange={onSettingsCategoryChange}
-                onSettingChange={onSettingChange}
-              />
-            ) : (
-              <AppPane appName={selectedAppName} onBackToMap={onActivateMap} />
-            )}
+            <AppPane appName={selectedAppName} onBackToMap={onActivateMap} />
           </div>
         </div>
       )}
@@ -2171,7 +2197,7 @@ function SettingsPane({
       <aside className="settings-sidebar">
         <input
           className="settings-search-input"
-          placeholder="Search Settings"
+          placeholder="Search"
           value={settingsSearch}
           onChange={(event) => setSettingsSearch(event.target.value)}
         />
@@ -2348,38 +2374,57 @@ function SettingsCategoryContent({
           <SettingGroupHeader title="Pedals & Steering" />
           <SegmentedControlRow
             label="Acceleration"
-            options={['CHILL', 'STANDARD']}
+            options={['Chill', 'Standard']}
             value={text('dynamics-acceleration')}
+            showInfo
             onChange={(next) => onSettingChange('dynamics-acceleration', next)}
           />
           <SegmentedControlRow
             label="Steering Mode"
-            options={['COMFORT', 'STANDARD', 'SPORT']}
+            options={['Comfort', 'Standard', 'Sport']}
             value={text('dynamics-steering-mode')}
+            showInfo
             onChange={(next) => onSettingChange('dynamics-steering-mode', next)}
           />
           <SegmentedControlRow
             label="Stopping Mode"
-            options={['CREEP', 'ROLL', 'HOLD']}
+            options={['Creep', 'Roll', 'Hold']}
             value={text('dynamics-stopping-mode')}
+            showInfo
             onChange={(next) => onSettingChange('dynamics-stopping-mode', next)}
-            description="Extends regenerative braking to low speeds and holds vehicle at stop in HOLD mode."
+            description="Maximises range by extending regenerative braking to lower speeds and automatically blends in brakes to hold the vehicle at a stop."
           />
-          <ToggleRow
-            label="Slip Start"
-            value={bool('dynamics-slip-start')}
-            onChange={(next) => onSettingChange('dynamics-slip-start', next)}
-          />
-          <ToggleRow
-            label="Track Mode (Beta)"
-            value={bool('dynamics-track-mode')}
-            onChange={(next) => onSettingChange('dynamics-track-mode', next)}
-          />
-          <ToggleRow
-            label="Regenerative Braking"
-            value={bool('dynamics-regen-braking')}
-            onChange={(next) => onSettingChange('dynamics-regen-braking', next)}
-          />
+          <div className="setting-row field-row">
+            <button
+              className={bool('dynamics-slip-start') ? 'switch-toggle on' : 'switch-toggle'}
+              aria-label={bool('dynamics-slip-start') ? 'Field Text enabled' : 'Field Text disabled'}
+              onClick={() => onSettingChange('dynamics-slip-start', !bool('dynamics-slip-start'))}
+            >
+              <span className="switch-toggle-knob" />
+            </button>
+            <div className="setting-row-text">
+              <span className="setting-with-info">
+                Field Text <em>i</em>
+              </span>
+              <p className="setting-inline-note">Text</p>
+            </div>
+          </div>
+          <div className="setting-row field-row">
+            <button
+              className={bool('dynamics-track-mode') ? 'switch-toggle on' : 'switch-toggle'}
+              aria-label={bool('dynamics-track-mode') ? 'Field Text enabled' : 'Field Text disabled'}
+              onClick={() => onSettingChange('dynamics-track-mode', !bool('dynamics-track-mode'))}
+            >
+              <span className="switch-toggle-knob" />
+            </button>
+            <div className="setting-row-text">
+              <span className="setting-with-info">
+                Field Text <em>i</em>
+              </span>
+              <p className="setting-inline-note">Text</p>
+            </div>
+            <button className="setting-inline-link">Display</button>
+          </div>
         </>
       );
 
@@ -2640,7 +2685,7 @@ function SettingsCategoryContent({
           />
           <SegmentedControlRow
             label="Appearance"
-            options={['AUTO', 'LIGHT', 'DARK']}
+            options={['Light', 'Dark']}
             value={text('display-appearance')}
             onChange={(next) => onSettingChange('display-appearance', next)}
           />
@@ -3042,6 +3087,7 @@ interface SegmentedControlRowProps {
   options: string[];
   value: string;
   disabled?: boolean;
+  showInfo?: boolean;
   description?: string;
   onChange: (value: string) => void;
 }
@@ -3051,16 +3097,23 @@ function SegmentedControlRow({
   options,
   value,
   disabled = false,
+  showInfo = false,
   description,
   onChange
 }: SegmentedControlRowProps) {
   return (
-    <div className={`setting-row with-column ${disabled ? 'disabled' : ''}`}>
+    <div className={`setting-row with-column selectable-setting-row ${disabled ? 'disabled' : ''}`}>
       <div className="setting-row-text">
-        <span>{label}</span>
+        <span className={showInfo ? 'setting-with-info' : undefined}>
+          {label}
+          {showInfo && <em>i</em>}
+        </span>
         {description && <p className="setting-inline-note">{description}</p>}
       </div>
-      <div className="segmented-control">
+      <div
+        className="segmented-control"
+        style={{ '--control-count': options.length } as CSSProperties}
+      >
         {options.map((option) => (
           <button
             key={option}
@@ -3151,9 +3204,12 @@ interface TabsRowProps {
 
 function TabsRow({ label, options, value, disabled = false, onChange }: TabsRowProps) {
   return (
-    <div className={`setting-row with-column ${disabled ? 'disabled' : ''}`}>
+    <div className={`setting-row with-column selectable-setting-row ${disabled ? 'disabled' : ''}`}>
       <span>{label}</span>
-      <div className="tabs-row">
+      <div
+        className="tabs-row"
+        style={{ '--control-count': options.length } as CSSProperties}
+      >
         {options.map((option) => (
           <button
             key={option}
