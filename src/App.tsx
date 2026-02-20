@@ -1,6 +1,9 @@
 import {
+  createContext,
   type CSSProperties,
   type PointerEvent,
+  useCallback,
+  useContext,
   type WheelEvent,
   useEffect,
   useMemo,
@@ -190,6 +193,290 @@ interface VehicleStatus {
 interface SettingsState {
   activeCategory: SettingsCategory;
   values: Record<string, SettingValue>;
+}
+
+type DisplayLanguage = 'EN' | 'KR';
+
+const KR_TRANSLATIONS: Record<string, string> = {
+  Search: '검색',
+  'Search Settings': '설정 검색',
+  'No matching category': '일치하는 카테고리가 없습니다',
+  'Easy Entry': '간편 승하차',
+  Charging: '충전',
+  PASSENGER: '동승석',
+  'AIRBAG OFF': '에어백 꺼짐',
+  Navigate: '내비게이션',
+  'Navigate...': '내비게이션...',
+  Home: '집',
+  Work: '직장',
+  'Sample Map • Los Angeles, CA': '샘플 지도 • 로스앤젤레스, CA',
+  'Current Drive': '현재 주행',
+  'Since Charge': '충전 후',
+  Lifetime: '누적',
+  'Tire Pressure': '타이어 공기압',
+  'Recommended Front 42 psi': '권장 전륜 42 psi',
+  'Recommended Rear 42 psi': '권장 후륜 42 psi',
+  Open: '열기',
+  Close: '닫기',
+  Frunk: '프렁크',
+  Trunk: '트렁크',
+  'SPEED LIMIT': '제한 속도',
+  'Quick Controls': '빠른 제어',
+  'Pedals & Steering': '페달 및 스티어링',
+  'Mirrors & Steering': '미러 및 스티어링',
+  Headlights: '전조등',
+  OFF: '끔',
+  ON: '켬',
+  PARK: '미등',
+  AUTO: '자동',
+  Wipers: '와이퍼',
+  'Fold Mirrors': '미러 접기',
+  'Child Lock': '아동 잠금',
+  'Window Lock': '윈도우 잠금',
+  Glovebox: '글로브박스',
+  'Glovebox Open': '글로브박스 열림',
+  'Auto High Beam': '오토 하이빔',
+  'Sentry Mode': '감시 모드',
+  'Dashcam Auto Save': '대시캠 자동 저장',
+  'Mirror Select': '미러 선택',
+  LEFT: '왼쪽',
+  RIGHT: '오른쪽',
+  'Mirror Angle': '미러 각도',
+  'Steering Height': '핸들 높이',
+  'Steering Reach': '핸들 거리',
+  Acceleration: '가속',
+  Chill: '칠',
+  Standard: '표준',
+  'Steering Mode': '조향 모드',
+  Comfort: '컴포트',
+  Sport: '스포츠',
+  'Stopping Mode': '정차 모드',
+  Creep: '크립',
+  Roll: '롤',
+  Hold: '홀드',
+  'Field Text': '필드 텍스트',
+  Text: '텍스트',
+  Controls: '컨트롤',
+  Display: '디스플레이',
+  'Charge Limit': '충전 한도',
+  'Charging Current': '충전 전류',
+  'Scheduled Charging': '예약 충전',
+  'Off-Peak Charging': '비혼잡 시간 충전',
+  'Precondition Battery': '배터리 예열',
+  'Trip Planner Preconditioning': '경로 계획 예열',
+  'Open Charging Stats': '충전 통계 열기',
+  Autopilot: '오토파일럿',
+  'Autosteer (Beta)': '자동 조향(베타)',
+  'Navigate on Autopilot (Beta)': '오토파일럿 내비(베타)',
+  'Enable Autosteer first': '자동 조향을 먼저 켜세요',
+  'Auto Lane Change': '자동 차선 변경',
+  'Requires Navigate on Autopilot': '오토파일럿 내비가 필요합니다',
+  'Traffic Light and Stop Sign Control': '신호등 및 정지표지 제어',
+  'Summon Standby': '서먼 대기',
+  'FSD Profile': 'FSD 프로필',
+  CHILL: 'CHILL',
+  AVERAGE: '보통',
+  ASSERTIVE: '공격적',
+  'Safety Assist': '안전 보조',
+  'Forward Collision Warning': '전방 충돌 경고',
+  LATE: '늦게',
+  MEDIUM: '중간',
+  EARLY: '빠르게',
+  'Lane Departure Avoidance': '차선 이탈 방지',
+  WARNING: '경고',
+  ASSIST: '보조',
+  'Speed Limit Warning': '제한 속도 경고',
+  CHIME: '경고음',
+  'Following Distance': '차간 거리',
+  'Emergency Lane Departure Avoidance': '긴급 차선 이탈 방지',
+  'Blind Spot Camera': '사각지대 카메라',
+  'Automatic Emergency Braking': '자동 긴급 제동',
+  'Obstacle-Aware Acceleration': '장애물 인지 가속 제한',
+  Locks: '잠금',
+  'Walk-Away Door Lock': '하차 후 자동 잠금',
+  'Unlock on Park': '주차 시 잠금 해제',
+  'Driver Door Unlock Mode': '운전석 도어 해제 모드',
+  'Rear Child Lock': '뒷좌석 아동 잠금',
+  'Lock Confirmation Sound': '잠금 확인음',
+  'Valet Mode': '발렛 모드',
+  Disable: '끄기',
+  Enable: '켜기',
+  Lights: '조명',
+  'Dome Lights Auto': '실내등 자동',
+  'Fog Lights': '안개등',
+  'Ambient Lights': '무드 조명',
+  Seats: '시트',
+  'Driver Seat Heat': '운전석 열선',
+  'Passenger Seat Heat': '동승석 열선',
+  'Rear Seat Heaters': '뒷좌석 열선',
+  'Seatbelt Reminder': '안전벨트 알림',
+  Brightness: '밝기',
+  Appearance: '테마',
+  Light: '라이트',
+  Dark: '다크',
+  'Night Shift': '야간 모드',
+  'Distance Unit': '거리 단위',
+  'Temperature Unit': '온도 단위',
+  'Clock Format': '시계 형식',
+  Language: '언어',
+  'Range View': '주행거리 표시',
+  EST: '추정',
+  IDEAL: '이상',
+  Schedule: '스케줄',
+  'Departure Days': '출발 요일',
+  WEEKDAYS: '평일',
+  DAILY: '매일',
+  'Departure Hour': '출발 시간',
+  'Precondition Cabin': '실내 예열',
+  'Cabin Overheat Protection': '실내 과열 보호',
+  Safety: '안전',
+  'Security Alarm': '보안 경보',
+  'PIN to Drive': '주행 PIN',
+  'Parental Controls': '보호자 제어',
+  Configured: '설정됨',
+  Service: '서비스',
+  'Front Left Tire': '전륜 좌측',
+  'Front Right Tire': '전륜 우측',
+  'Rear Left Tire': '후륜 좌측',
+  'Rear Right Tire': '후륜 우측',
+  'Car Wash Mode': '세차 모드',
+  'Wiper Service Mode': '와이퍼 서비스 모드',
+  Cameras: '카메라',
+  Calibrate: '보정',
+  'Calibrating...': '보정 중...',
+  Software: '소프트웨어',
+  'Current Version': '현재 버전',
+  'Last Check': '마지막 확인',
+  'Update Channel': '업데이트 채널',
+  ADVANCED: '고급',
+  'Beta Updates': '베타 업데이트',
+  'Auto Download over Wi-Fi': 'Wi-Fi 자동 다운로드',
+  'Check for Updates': '업데이트 확인',
+  'Checking for Updates...': '업데이트 확인 중...',
+  Navigation: '내비게이션',
+  'Online Routing': '온라인 경로 안내',
+  'Avoid Tolls': '유료도로 회피',
+  'Avoid Highways': '고속도로 회피',
+  'Avoid Ferries': '페리 회피',
+  'Map Color': '지도 색상',
+  DAY: '주간',
+  NIGHT: '야간',
+  'Voice Guidance': '음성 안내',
+  LOW: '낮음',
+  NORMAL: '보통',
+  HIGH: '높음',
+  'Home & Work Suggestions': '집/직장 추천',
+  Trips: '주행 기록',
+  'Trip A': '트립 A',
+  'Trip B': '트립 B',
+  Reset: '초기화',
+  'Wi-Fi': '와이파이',
+  'Connected Network': '연결된 네트워크',
+  'Auto Join': '자동 연결',
+  Networks: '네트워크',
+  'Searching...': '검색 중...',
+  Scan: '스캔',
+  Bluetooth: '블루투스',
+  'Phone Key': '폰 키',
+  'Primary Device': '기본 기기',
+  Pairing: '페어링',
+  'Stop Pairing': '페어링 중지',
+  'Pair Device': '기기 페어링',
+  Audio: '오디오',
+  'Immersive Sound': '입체 음향',
+  Bass: '베이스',
+  Mid: '미드',
+  Treble: '트레블',
+  'Speed-Dependent Volume': '속도 연동 볼륨',
+  'Streaming Quality': '스트리밍 품질',
+  NAV: '내비',
+  CAR: '차량',
+  Phone: '전화',
+  Calendar: '캘린더',
+  Spotify: '스포티파이',
+  Apps: '앱',
+  Dashcam: '대시캠',
+  Messages: '메시지',
+  Zoom: '줌',
+  Theater: '시어터',
+  Energy: '에너지',
+  'Front Defrost': '앞유리 성에 제거',
+  'Rear Defrost': '뒷유리 성에 제거',
+  'Heated Seat': '열선 시트',
+  'Heated Steering': '열선 스티어링',
+  Upgrades: '업그레이드',
+  'Acceleration Boost': '가속 부스트',
+  'Premium Connectivity': '프리미엄 커넥티비티',
+  'Rear Heated Seats': '뒷좌석 열선 시트',
+  'Open Upgrade Shop': '업그레이드 상점 열기',
+  On: '켬',
+  Off: '끔',
+  'Back to Map': '지도로 돌아가기',
+  'Recent Calls': '최근 통화',
+  'Alex Kim • 2 min ago': 'Alex Kim • 2분 전',
+  'Service Center • Yesterday': '서비스 센터 • 어제',
+  'Home • Yesterday': '집 • 어제',
+  'Dial Pad': '다이얼 패드',
+  Today: '오늘',
+  '10:30 AM • Design Review': '오전 10:30 • 디자인 리뷰',
+  '01:00 PM • Charging Stop': '오후 1:00 • 충전 정차',
+  '05:45 PM • Head to Tesla HQ': '오후 5:45 • 테슬라 본사 이동',
+  'Paired Devices': '페어링된 기기',
+  'iPhone 15 Pro • Connected': 'iPhone 15 Pro • 연결됨',
+  'AirPods Pro • Available': 'AirPods Pro • 사용 가능',
+  'Passenger Phone • Available': '동승자 폰 • 사용 가능',
+  Settings: '설정',
+  'Phone Key On': '폰 키 켬',
+  'Auto Connect': '자동 연결',
+  Discoverable: '검색 허용',
+  'Now Playing': '지금 재생 중',
+  Toybox: '토이박스',
+  'Rainbow Road': '레인보우 로드',
+  Boombox: '붐박스',
+  'Light Show': '라이트 쇼',
+  'Mars Theme': '화성 테마',
+  Arcade: '아케이드',
+  'Beach Buggy': '비치 버기',
+  'Sky Force': '스카이 포스',
+  Chess: '체스',
+  'App view mapped from dock shortcut.': '도크 바로가기로 연결된 앱 화면입니다.',
+  'close overlay': '오버레이 닫기',
+  BKSP: '지움',
+  ENTER: '입력',
+  SHIFT: '쉬프트',
+  MIC: '음성',
+  SPACE: '공백',
+  CLOSE: '닫기',
+  'Field Text enabled': '필드 텍스트 켜짐',
+  'Field Text disabled': '필드 텍스트 꺼짐',
+  Vehicle: '차량',
+  Cybercab: '사이버캡',
+  panel: '패널',
+  'zoom in': '확대',
+  'zoom out': '축소',
+  'reset viewport': '뷰 초기화',
+  'ETA ': '도착 예정 ',
+  arrival: '도착',
+  'End Trip': '경로 종료',
+  More: '더보기',
+  'Available only when headlights are set to AUTO':
+    '전조등이 AUTO일 때만 사용 가능합니다',
+  'Maximises range by extending regenerative braking to lower speeds and automatically blends in brakes to hold the vehicle at a stop.':
+    '회생 제동을 저속까지 확장하고 브레이크를 자동으로 혼합해 정차 상태를 유지하여 주행거리를 늘립니다.'
+};
+
+const DisplayLanguageContext = createContext<DisplayLanguage>('EN');
+
+function useDisplayLanguage() {
+  return useContext(DisplayLanguageContext);
+}
+
+function useTranslator() {
+  const language = useDisplayLanguage();
+  return useCallback(
+    (text: string) => (language === 'KR' ? KR_TRANSLATIONS[text] ?? text : text),
+    [language]
+  );
 }
 
 interface AppTile {
@@ -520,6 +807,10 @@ function App() {
 
   const isOverlayBlocking = overlay.isLauncherOpen || overlay.isKeyboardOpen;
   const isImmersiveLeftPane = leftPaneWidthPct >= 96;
+  const displayLanguage: DisplayLanguage =
+    String(settingsState.values['display-language'] ?? 'EN').toUpperCase() === 'KR'
+      ? 'KR'
+      : 'EN';
   const appearanceSetting = String(settingsState.values['display-appearance'] ?? 'Light').toLowerCase();
   const resolvedAppearance =
     appearanceSetting === 'dark' || appearanceSetting === 'light'
@@ -948,10 +1239,11 @@ function App() {
   };
 
   return (
+    <DisplayLanguageContext.Provider value={displayLanguage}>
       <div
-      className={`dashboard-shell ${isDarkMode ? 'dark-mode' : ''} ${driveState.cyberMode ? 'cyber-mode' : ''} ${isImmersiveLeftPane ? 'immersive-left-pane' : ''} ${isImmersiveLightMode ? 'immersive-light-mode' : ''} ${rightPaneMode === 'SETTINGS' ? 'settings-open' : ''}`}
-      style={{ '--left-pane-width': `${leftPaneWidthPct}%` } as CSSProperties}
-    >
+        className={`dashboard-shell ${isDarkMode ? 'dark-mode' : ''} ${driveState.cyberMode ? 'cyber-mode' : ''} ${isImmersiveLeftPane ? 'immersive-left-pane' : ''} ${isImmersiveLightMode ? 'immersive-light-mode' : ''} ${rightPaneMode === 'SETTINGS' ? 'settings-open' : ''}`}
+        style={{ '--left-pane-width': `${leftPaneWidthPct}%` } as CSSProperties}
+      >
       <TopStatusBar
         vehicleStatus={vehicleStatus}
         driveState={driveState}
@@ -1077,12 +1369,13 @@ function App() {
         onSearchDraftChange={setSearchDraft}
         onSearchSubmit={handleSearchSubmit}
         onSearchMic={() => {
-          setSearchDraft('Voice destination draft');
+          setSearchDraft(displayLanguage === 'KR' ? '음성 목적지 초안' : 'Voice destination draft');
         }}
         onQuickToggle={toggleQuickAction}
         onSelectApp={handleLauncherAppClick}
       />
-    </div>
+      </div>
+    </DisplayLanguageContext.Provider>
   );
 }
 
@@ -1101,6 +1394,7 @@ function TopStatusBar({
   onToggleCharging,
   onSetDrive
 }: TopStatusBarProps) {
+  const t = useTranslator();
   const gearLabels: Array<DriveState['gear']> = ['P', 'R', 'N', 'D'];
 
   return (
@@ -1137,12 +1431,12 @@ function TopStatusBar({
           </button>
           <span className="status-chip with-icon">
             <User size={14} />
-            Easy Entry
+            {t('Easy Entry')}
           </span>
           {driveState.charging && (
             <span className="status-chip charging">
               <BatteryCharging size={14} />
-              Charging
+              {t('Charging')}
             </span>
           )}
         </div>
@@ -1154,8 +1448,8 @@ function TopStatusBar({
           <div className="top-status-right">
             <TriangleAlert size={12} />
             <div>
-              <span>PASSENGER</span>
-              <span>AIRBAG OFF</span>
+              <span>{t('PASSENGER')}</span>
+              <span>{t('AIRBAG OFF')}</span>
             </div>
           </div>
         </div>
@@ -1165,6 +1459,7 @@ function TopStatusBar({
 }
 
 function ClockDisplay() {
+  const language = useDisplayLanguage();
   const [now, setNow] = useState(() => new Date());
 
   useEffect(() => {
@@ -1177,7 +1472,7 @@ function ClockDisplay() {
 
   return (
     <span>
-      {now.toLocaleTimeString('en-US', {
+      {now.toLocaleTimeString(language === 'KR' ? 'ko-KR' : 'en-US', {
         hour: 'numeric',
         minute: '2-digit',
         hour12: true
@@ -1218,6 +1513,7 @@ function BottomDock({
   onVolumeChange,
   onToggleMute
 }: BottomDockProps) {
+  const t = useTranslator();
   const shortcuts: Array<{
     id: string;
     shortLabel: string;
@@ -1267,13 +1563,15 @@ function BottomDock({
             }
             onClick={() => onOpenApp(shortcut.id)}
             disabled={disabled}
-            title={shortcut.id}
+            title={t(shortcut.shortLabel)}
           >
-            {shortcut.iconSrc ? <img src={shortcut.iconSrc} alt={shortcut.id} className="dock-shortcut-icon" /> : null}
+            {shortcut.iconSrc ? (
+              <img src={shortcut.iconSrc} alt={t(shortcut.shortLabel)} className="dock-shortcut-icon" />
+            ) : null}
             {!shortcut.iconSrc && shortcut.icon ? (
               <shortcut.icon className="dock-shortcut-icon-svg" size={18} />
             ) : null}
-            {!shortcut.iconSrc && !shortcut.icon ? shortcut.shortLabel : null}
+            {!shortcut.iconSrc && !shortcut.icon ? t(shortcut.shortLabel) : null}
             {activeShortcut === shortcut.id ? <span className="dock-shortcut-indicator" /> : null}
           </button>
         ))}
@@ -1341,6 +1639,7 @@ function LeftPane({
   onSearchClick,
   onQuickDestination
 }: LeftPaneProps) {
+  const t = useTranslator();
   const statusItems: Array<{ label: string; icon: LucideIcon; tone: string }> = [
     {
       label: 'Lights',
@@ -1397,7 +1696,9 @@ function LeftPane({
         {!isImmersive && navigationActive && (
           <div className="speed-cluster">
             <div className="speed-value">{currentSpeed}</div>
-            <div className="speed-limit">SPEED LIMIT {speedLimit}</div>
+            <div className="speed-limit">
+              {t('SPEED LIMIT')} {speedLimit}
+            </div>
           </div>
         )}
       </div>
@@ -1447,6 +1748,7 @@ function DrivingVisualization({
   onToggleFrunk,
   onToggleTrunk
 }: DrivingVisualizationProps) {
+  const t = useTranslator();
   const [vehicleYaw, setVehicleYaw] = useState(0);
   const dragRef = useRef<{ startX: number; initialYaw: number } | null>(null);
   const vehicleImageSrc = driveState.cyberMode ? cybercabImage : modelYImage;
@@ -1487,21 +1789,21 @@ function DrivingVisualization({
           className="vehicle-hero-image"
           style={{ transform: `perspective(760px) rotateY(${vehicleYaw}deg)` }}
           src={vehicleImageSrc}
-          alt={driveState.cyberMode ? 'Cybercab' : 'Vehicle'}
+          alt={driveState.cyberMode ? t('Cybercab') : t('Vehicle')}
           draggable={false}
         />
       </div>
       <div className="vehicle-hotspots">
         <button className="vehicle-hotspot vehicle-hotspot-frunk" onClick={onToggleFrunk}>
-          <span>{vehicleStatus.frunkOpen ? 'Close' : 'Open'}</span>
-          <strong>Frunk</strong>
+          <span>{vehicleStatus.frunkOpen ? t('Close') : t('Open')}</span>
+          <strong>{t('Frunk')}</strong>
         </button>
         <button className="vehicle-hotspot vehicle-hotspot-lock" onClick={onToggleLock}>
           {vehicleStatus.locked ? <Lock size={14} /> : <Unlock size={14} />}
         </button>
         <button className="vehicle-hotspot vehicle-hotspot-trunk" onClick={onToggleTrunk}>
-          <span>{vehicleStatus.trunkOpen ? 'Close' : 'Open'}</span>
-          <strong>Trunk</strong>
+          <span>{vehicleStatus.trunkOpen ? t('Close') : t('Open')}</span>
+          <strong>{t('Trunk')}</strong>
         </button>
       </div>
     </div>
@@ -1535,6 +1837,7 @@ function MediaMiniPlayerCard({
   onToggleExpanded,
   onSeek
 }: MediaMiniPlayerProps) {
+  const t = useTranslator();
   const [dragOffsetY, setDragOffsetY] = useState(0);
   const dragRef = useRef<{ startY: number } | null>(null);
   const [carouselIndex, setCarouselIndex] = useState(0);
@@ -1758,7 +2061,7 @@ function MediaMiniPlayerCard({
           <section className="media-slide media-slide-stats">
             <div className="media-stats-grid">
               <div>
-                <h4>Current Drive</h4>
+                <h4>{t('Current Drive')}</h4>
                 <p>
                   4.2 <span>mi</span>
                 </p>
@@ -1770,7 +2073,7 @@ function MediaMiniPlayerCard({
                 </p>
               </div>
               <div>
-                <h4>Since Charge</h4>
+                <h4>{t('Since Charge')}</h4>
                 <p>
                   38.8 <span>mi</span>
                 </p>
@@ -1782,7 +2085,7 @@ function MediaMiniPlayerCard({
                 </p>
               </div>
               <div>
-                <h4>Lifetime</h4>
+                <h4>{t('Lifetime')}</h4>
                 <p>
                   20,836 <span>mi</span>
                 </p>
@@ -1799,12 +2102,12 @@ function MediaMiniPlayerCard({
           <section className="media-slide media-slide-tires">
             <div className="media-tire-panel">
               <div className="media-tire-copy">
-                <h4>Tire Pressure</h4>
-                <p>Recommended Front 42 psi</p>
-                <p>Recommended Rear 42 psi</p>
+                <h4>{t('Tire Pressure')}</h4>
+                <p>{t('Recommended Front 42 psi')}</p>
+                <p>{t('Recommended Rear 42 psi')}</p>
               </div>
               <div className="media-tire-visual">
-                <img src={tireCarImage} alt="Tire pressure car view" />
+                <img src={tireCarImage} alt={t('Tire Pressure')} />
                 <span className="tire-psi top-left">43 psi</span>
                 <span className="tire-psi top-right">44 psi</span>
                 <span className="tire-psi bottom-left">44 psi</span>
@@ -1840,20 +2143,21 @@ function ImmersiveNavigationCard({
   onSearchClick,
   onQuickDestination
 }: ImmersiveNavigationCardProps) {
+  const t = useTranslator();
   return (
     <article className="immersive-nav-card">
       <button className="immersive-nav-search" onClick={onSearchClick}>
         <Search size={28} />
-        <span>{searchValue.trim() ? searchValue : 'Navigate'}</span>
+        <span>{searchValue.trim() ? searchValue : t('Navigate')}</span>
       </button>
       <div className="immersive-nav-actions">
         <button onClick={() => onQuickDestination('Home')}>
           <House size={24} />
-          <span>Home</span>
+          <span>{t('Home')}</span>
         </button>
         <button onClick={() => onQuickDestination('Work')}>
           <BriefcaseBusiness size={24} />
-          <span>Work</span>
+          <span>{t('Work')}</span>
         </button>
       </div>
     </article>
@@ -1891,17 +2195,9 @@ function RightPane({
   onSettingsCategoryChange,
   onSettingChange
 }: RightPaneProps) {
-  if (mode === 'SETTINGS') {
-    return (
-      <SettingsPane
-        settingsState={settingsState}
-        onCategoryChange={onSettingsCategoryChange}
-        onSettingChange={onSettingChange}
-      />
-    );
-  }
-
-  const isOverlayMode = mode === 'APP';
+  const isSettingsMode = mode === 'SETTINGS';
+  const isAppMode = mode === 'APP';
+  const isOverlayMode = isSettingsMode || isAppMode;
   const [overlayOffsetY, setOverlayOffsetY] = useState(0);
   const [isOverlayDragging, setIsOverlayDragging] = useState(false);
   const overlayDragRef = useRef<{ startY: number } | null>(null);
@@ -1958,9 +2254,9 @@ function RightPane({
         onQuickDestination={onQuickDestination}
       />
 
-      {mode === 'APP' && (
+      {isOverlayMode && (
         <div
-          className={`right-overlay-pane app ${isOverlayDragging ? 'dragging' : ''}`}
+          className={`right-overlay-pane ${isSettingsMode ? 'settings' : 'app'} ${isOverlayDragging ? 'dragging' : ''}`}
           style={{ transform: `translateY(${overlayOffsetY}px)` }}
           onPointerDown={startOverlayDrag}
           onPointerMove={moveOverlayDrag}
@@ -1971,7 +2267,15 @@ function RightPane({
             <span className="pane-drag-region-bar" data-pane-drag-handle="true" />
           </div>
           <div className="right-overlay-content">
-            <AppPane appName={selectedAppName} onBackToMap={onActivateMap} />
+            {isSettingsMode ? (
+              <SettingsPane
+                settingsState={settingsState}
+                onCategoryChange={onSettingsCategoryChange}
+                onSettingChange={onSettingChange}
+              />
+            ) : (
+              <AppPane appName={selectedAppName} onBackToMap={onActivateMap} />
+            )}
           </div>
         </div>
       )}
@@ -1998,6 +2302,7 @@ function MapPane({
   onMapViewportChange,
   onQuickDestination
 }: MapPaneProps) {
+  const t = useTranslator();
   const dragRef = useRef<{ startX: number; startY: number; panX: number; panY: number } | null>(
     null
   );
@@ -2049,12 +2354,12 @@ function MapPane({
     <section className="map-pane">
       <button className="map-search-bar" onClick={onSearchClick}>
         <Search className="map-search-icon" size={18} />
-        <span>{searchValue.trim() ? searchValue : 'Navigate...'}</span>
+        <span>{searchValue.trim() ? searchValue : t('Navigate...')}</span>
       </button>
       {!navigationState.active && (
         <div className="map-quick-destinations">
-          <button onClick={() => onQuickDestination('Home')}>Home</button>
-          <button onClick={() => onQuickDestination('Work')}>Work</button>
+          <button onClick={() => onQuickDestination('Home')}>{t('Home')}</button>
+          <button onClick={() => onQuickDestination('Work')}>{t('Work')}</button>
         </div>
       )}
 
@@ -2112,16 +2417,16 @@ function MapPane({
         </div>
 
         <div className="map-control-stack" onPointerDown={(event) => event.stopPropagation()}>
-          <button onClick={() => zoom(0.12)} aria-label="zoom in">
+          <button onClick={() => zoom(0.12)} aria-label={t('zoom in')}>
             <Plus size={17} />
           </button>
-          <button onClick={() => zoom(-0.12)} aria-label="zoom out">
+          <button onClick={() => zoom(-0.12)} aria-label={t('zoom out')}>
             <Minus size={17} />
           </button>
-          <button onClick={resetViewport} aria-label="reset viewport">
+          <button onClick={resetViewport} aria-label={t('reset viewport')}>
             <RotateCcw size={16} />
           </button>
-          <button onClick={onSearchClick} aria-label="search">
+          <button onClick={onSearchClick} aria-label={t('Search')}>
             <LocateFixed size={17} />
           </button>
         </div>
@@ -2134,7 +2439,7 @@ function MapPane({
           {Math.round(mapViewport.zoom * 100)}%
         </button>
 
-        <div className="map-sample-location">Sample Map • Los Angeles, CA</div>
+        <div className="map-sample-location">{t('Sample Map • Los Angeles, CA')}</div>
 
         {navigationState.active && (
           <NavigationOverlay navigationState={navigationState} onEndTrip={onEndTrip} />
@@ -2150,18 +2455,19 @@ interface NavigationOverlayProps {
 }
 
 function NavigationOverlay({ navigationState, onEndTrip }: NavigationOverlayProps) {
+  const t = useTranslator();
   return (
     <>
       <article className="turn-by-turn-card">
         <div className="turn-primary-line">
           <h3>{navigationState.currentStep.distance}</h3>
-          <p>{navigationState.currentStep.instruction}</p>
+          <p>{t(navigationState.currentStep.instruction)}</p>
         </div>
         <ul>
           {navigationState.nextSteps.map((step) => (
             <li key={`${step.distance}-${step.instruction}`}>
               <span>{step.distance}</span>
-              <span>{step.instruction}</span>
+              <span>{t(step.instruction)}</span>
             </li>
           ))}
         </ul>
@@ -2169,16 +2475,21 @@ function NavigationOverlay({ navigationState, onEndTrip }: NavigationOverlayProp
 
       <article className="trip-summary-card">
         <div className="trip-destination">
-          <strong>{navigationState.destination}</strong>
-          <p>ETA {navigationState.eta}</p>
+          <strong>{t(navigationState.destination)}</strong>
+          <p>
+            {t('ETA ')}
+            {navigationState.eta}
+          </p>
         </div>
         <div className="trip-meta">
           <span>{navigationState.distance}</span>
-          <span>{navigationState.batteryAtArrival} arrival</span>
+          <span>
+            {navigationState.batteryAtArrival} {t('arrival')}
+          </span>
         </div>
         <div className="trip-actions">
-          <button onClick={onEndTrip}>End Trip</button>
-          <button>More</button>
+          <button onClick={onEndTrip}>{t('End Trip')}</button>
+          <button>{t('More')}</button>
         </div>
       </article>
     </>
@@ -2196,11 +2507,16 @@ function SettingsPane({
   onCategoryChange,
   onSettingChange
 }: SettingsPaneProps) {
+  const t = useTranslator();
   const [settingsSearch, setSettingsSearch] = useState('');
   const searchToken = settingsSearch.trim().toLowerCase();
-  const visibleCategories = SETTINGS_CATEGORIES.filter((category) =>
-    SETTINGS_CATEGORY_META[category].label.toLowerCase().includes(searchToken)
-  );
+  const visibleCategories = SETTINGS_CATEGORIES.filter((category) => {
+    const categoryLabel = SETTINGS_CATEGORY_META[category].label;
+    return (
+      categoryLabel.toLowerCase().includes(searchToken) ||
+      t(categoryLabel).toLowerCase().includes(searchToken)
+    );
+  });
 
   useEffect(() => {
     if (visibleCategories.length === 0) {
@@ -2216,7 +2532,7 @@ function SettingsPane({
       <aside className="settings-sidebar">
         <input
           className="settings-search-input"
-          placeholder="Search"
+          placeholder={t('Search Settings')}
           value={settingsSearch}
           onChange={(event) => setSettingsSearch(event.target.value)}
         />
@@ -2236,13 +2552,13 @@ function SettingsPane({
                 <CategoryIcon className="settings-category-icon-svg" />
               </span>
               <span className="settings-category-text">
-                {SETTINGS_CATEGORY_META[category].label}
+                {t(SETTINGS_CATEGORY_META[category].label)}
               </span>
             </button>
           );
         })}
         {visibleCategories.length === 0 && (
-          <div className="settings-empty-result">No matching category</div>
+          <div className="settings-empty-result">{t('No matching category')}</div>
         )}
       </aside>
 
@@ -2250,19 +2566,19 @@ function SettingsPane({
         <header className="settings-header">
           <div className="settings-header-title">
             <User size={18} />
-            <h2>Easy Entry</h2>
+            <h2>{t('Easy Entry')}</h2>
           </div>
           <div className="settings-header-actions">
-            <button title="Download">
+            <button title={t('Download')}>
               <Download size={14} />
             </button>
-            <button title="Notifications">
+            <button title={t('Notifications')}>
               <Bell size={14} />
             </button>
-            <button title="Bluetooth">
+            <button title={t('Bluetooth')}>
               <Bluetooth size={14} />
             </button>
-            <button title="Signal">
+            <button title={t('Signal')}>
               <Signal size={14} />
             </button>
           </div>
@@ -2288,6 +2604,7 @@ function SettingsCategoryContent({
   settingsState,
   onSettingChange
 }: SettingsCategoryContentProps) {
+  const t = useTranslator();
   const values = settingsState.values;
   const bool = (id: string) => Boolean(values[id]);
   const text = (id: string) => String(values[id] ?? '');
@@ -2416,33 +2733,33 @@ function SettingsCategoryContent({
           <div className="setting-row field-row">
             <button
               className={bool('dynamics-slip-start') ? 'switch-toggle on' : 'switch-toggle'}
-              aria-label={bool('dynamics-slip-start') ? 'Field Text enabled' : 'Field Text disabled'}
+              aria-label={t(bool('dynamics-slip-start') ? 'Field Text enabled' : 'Field Text disabled')}
               onClick={() => onSettingChange('dynamics-slip-start', !bool('dynamics-slip-start'))}
             >
               <span className="switch-toggle-knob" />
             </button>
             <div className="setting-row-text">
               <span className="setting-with-info">
-                Field Text <em>i</em>
+                {t('Field Text')} <em>i</em>
               </span>
-              <p className="setting-inline-note">Text</p>
+              <p className="setting-inline-note">{t('Text')}</p>
             </div>
           </div>
           <div className="setting-row field-row">
             <button
               className={bool('dynamics-track-mode') ? 'switch-toggle on' : 'switch-toggle'}
-              aria-label={bool('dynamics-track-mode') ? 'Field Text enabled' : 'Field Text disabled'}
+              aria-label={t(bool('dynamics-track-mode') ? 'Field Text enabled' : 'Field Text disabled')}
               onClick={() => onSettingChange('dynamics-track-mode', !bool('dynamics-track-mode'))}
             >
               <span className="switch-toggle-knob" />
             </button>
             <div className="setting-row-text">
               <span className="setting-with-info">
-                Field Text <em>i</em>
+                {t('Field Text')} <em>i</em>
               </span>
-              <p className="setting-inline-note">Text</p>
+              <p className="setting-inline-note">{t('Text')}</p>
             </div>
-            <button className="setting-inline-link">Display</button>
+            <button className="setting-inline-link">{t('Display')}</button>
           </div>
         </>
       );
@@ -3067,9 +3384,10 @@ function SettingsCategoryContent({
 }
 
 function SettingGroupHeader({ title }: { title: string }) {
+  const t = useTranslator();
   return (
     <div className="setting-group-header">
-      <h3>{title}</h3>
+      <h3>{t(title)}</h3>
       <span>i</span>
     </div>
   );
@@ -3084,18 +3402,19 @@ interface ToggleRowProps {
 }
 
 function ToggleRow({ label, value, disabled = false, description, onChange }: ToggleRowProps) {
+  const t = useTranslator();
   return (
     <div className={`setting-row ${disabled ? 'disabled' : ''}`}>
       <div className="setting-row-text">
-        <span>{label}</span>
-        {description && <p className="setting-inline-note">{description}</p>}
+        <span>{t(label)}</span>
+        {description && <p className="setting-inline-note">{t(description)}</p>}
       </div>
       <button
         className={value ? 'toggle on' : 'toggle'}
         onClick={() => onChange(!value)}
         disabled={disabled}
       >
-        {value ? 'On' : 'Off'}
+        {value ? t('On') : t('Off')}
       </button>
     </div>
   );
@@ -3120,14 +3439,15 @@ function SegmentedControlRow({
   description,
   onChange
 }: SegmentedControlRowProps) {
+  const t = useTranslator();
   return (
     <div className={`setting-row with-column selectable-setting-row ${disabled ? 'disabled' : ''}`}>
       <div className="setting-row-text">
         <span className={showInfo ? 'setting-with-info' : undefined}>
-          {label}
+          {t(label)}
           {showInfo && <em>i</em>}
         </span>
-        {description && <p className="setting-inline-note">{description}</p>}
+        {description && <p className="setting-inline-note">{t(description)}</p>}
       </div>
       <div
         className="segmented-control"
@@ -3140,7 +3460,7 @@ function SegmentedControlRow({
             onClick={() => onChange(option)}
             disabled={disabled}
           >
-            {option}
+            {t(option)}
           </button>
         ))}
       </div>
@@ -3167,10 +3487,11 @@ function SliderRow({
   disabled = false,
   onChange
 }: SliderRowProps) {
+  const t = useTranslator();
   return (
     <div className={`setting-row with-column ${disabled ? 'disabled' : ''}`}>
       <div className="slider-row-header">
-        <span>{label}</span>
+        <span>{t(label)}</span>
         <span>{value}</span>
       </div>
       <input
@@ -3198,6 +3519,7 @@ interface TileGridProps {
 }
 
 function TileGrid({ tiles, onToggle }: TileGridProps) {
+  const t = useTranslator();
   return (
     <div className="tile-grid">
       {tiles.map((tile) => (
@@ -3206,7 +3528,7 @@ function TileGrid({ tiles, onToggle }: TileGridProps) {
           className={tile.active ? 'tile active' : 'tile'}
           onClick={() => onToggle(tile.id, !tile.active)}
         >
-          {tile.label}
+          {t(tile.label)}
         </button>
       ))}
     </div>
@@ -3222,9 +3544,10 @@ interface TabsRowProps {
 }
 
 function TabsRow({ label, options, value, disabled = false, onChange }: TabsRowProps) {
+  const t = useTranslator();
   return (
     <div className={`setting-row with-column selectable-setting-row ${disabled ? 'disabled' : ''}`}>
-      <span>{label}</span>
+      <span>{t(label)}</span>
       <div
         className="tabs-row"
         style={{ '--control-count': options.length } as CSSProperties}
@@ -3236,7 +3559,7 @@ function TabsRow({ label, options, value, disabled = false, onChange }: TabsRowP
             onClick={() => onChange(option)}
             disabled={disabled}
           >
-            {option}
+            {t(option)}
           </button>
         ))}
       </div>
@@ -3245,9 +3568,10 @@ function TabsRow({ label, options, value, disabled = false, onChange }: TabsRowP
 }
 
 function SecondaryActionLink({ label, onClick }: { label: string; onClick?: () => void }) {
+  const t = useTranslator();
   return (
     <button className="secondary-link" onClick={onClick}>
-      {label}
+      {t(label)}
     </button>
   );
 }
@@ -3259,11 +3583,12 @@ interface ActionRowProps {
 }
 
 function ActionRow({ label, buttonLabel, onAction }: ActionRowProps) {
+  const t = useTranslator();
   return (
     <div className="setting-row">
-      <span>{label}</span>
+      <span>{t(label)}</span>
       <button className="setting-action-button" onClick={onAction}>
-        {buttonLabel}
+        {t(buttonLabel)}
       </button>
     </div>
   );
@@ -3286,9 +3611,10 @@ function StepperRow({
   unit,
   onChange
 }: StepperRowProps) {
+  const t = useTranslator();
   return (
     <div className="setting-row">
-      <span>{label}</span>
+      <span>{t(label)}</span>
       <div className="stepper-control">
         <button onClick={() => onChange(clamp(value - 1, min, max))}>-</button>
         <span>
@@ -3302,10 +3628,11 @@ function StepperRow({
 }
 
 function StatusRow({ label, value }: { label: string; value: string }) {
+  const t = useTranslator();
   return (
     <div className="setting-row">
-      <span>{label}</span>
-      <strong className="setting-status-value">{value}</strong>
+      <span>{t(label)}</span>
+      <strong className="setting-status-value">{t(value)}</strong>
     </div>
   );
 }
@@ -3316,6 +3643,7 @@ interface AppPaneProps {
 }
 
 function AppPane({ appName, onBackToMap }: AppPaneProps) {
+  const t = useTranslator();
   const appTile = APP_TILES.find((tile) => tile.label === appName);
   const appKey = appName.trim().toLowerCase();
   const fallbackIcons: Partial<Record<string, LucideIcon>> = {
@@ -3332,19 +3660,21 @@ function AppPane({ appName, onBackToMap }: AppPaneProps) {
           {(appTile?.iconSrc || AppIcon) && (
             <div className="app-pane-icon-wrap">
               {appTile?.iconSrc ? (
-                <img src={appTile.iconSrc} alt={appName} className="app-pane-icon" />
+                <img src={appTile.iconSrc} alt={t(appName)} className="app-pane-icon" />
               ) : AppIcon ? (
                 <AppIcon className="app-pane-icon-svg" size={34} />
               ) : null}
             </div>
           )}
           <div>
-            <h2>{appName}</h2>
-            <p>{appName} panel</p>
+            <h2>{t(appName)}</h2>
+            <p>
+              {t(appName)} {t('panel')}
+            </p>
           </div>
         </div>
         <button className="dock-app-back" onClick={onBackToMap}>
-          Back to Map
+          {t('Back to Map')}
         </button>
       </header>
 
@@ -3352,15 +3682,15 @@ function AppPane({ appName, onBackToMap }: AppPaneProps) {
         {appKey === 'phone' && (
           <div className="dock-app-grid two-col">
             <section className="dock-app-card">
-              <h3>Recent Calls</h3>
+              <h3>{t('Recent Calls')}</h3>
               <ul>
-                <li>Alex Kim • 2 min ago</li>
-                <li>Service Center • Yesterday</li>
-                <li>Home • Yesterday</li>
+                <li>{t('Alex Kim • 2 min ago')}</li>
+                <li>{t('Service Center • Yesterday')}</li>
+                <li>{t('Home • Yesterday')}</li>
               </ul>
             </section>
             <section className="dock-app-card">
-              <h3>Dial Pad</h3>
+              <h3>{t('Dial Pad')}</h3>
               <div className="dock-keypad">
                 {['1', '2', '3', '4', '5', '6', '7', '8', '9', '*', '0', '#'].map((digit) => (
                   <button key={digit}>{digit}</button>
@@ -3373,11 +3703,11 @@ function AppPane({ appName, onBackToMap }: AppPaneProps) {
         {appKey === 'calendar' && (
           <div className="dock-app-grid">
             <section className="dock-app-card">
-              <h3>Today</h3>
+              <h3>{t('Today')}</h3>
               <ul>
-                <li>10:30 AM • Design Review</li>
-                <li>01:00 PM • Charging Stop</li>
-                <li>05:45 PM • Head to Tesla HQ</li>
+                <li>{t('10:30 AM • Design Review')}</li>
+                <li>{t('01:00 PM • Charging Stop')}</li>
+                <li>{t('05:45 PM • Head to Tesla HQ')}</li>
               </ul>
             </section>
           </div>
@@ -3386,19 +3716,19 @@ function AppPane({ appName, onBackToMap }: AppPaneProps) {
         {appKey === 'bluetooth' && (
           <div className="dock-app-grid two-col">
             <section className="dock-app-card">
-              <h3>Paired Devices</h3>
+              <h3>{t('Paired Devices')}</h3>
               <ul>
-                <li>iPhone 15 Pro • Connected</li>
-                <li>AirPods Pro • Available</li>
-                <li>Passenger Phone • Available</li>
+                <li>{t('iPhone 15 Pro • Connected')}</li>
+                <li>{t('AirPods Pro • Available')}</li>
+                <li>{t('Passenger Phone • Available')}</li>
               </ul>
             </section>
             <section className="dock-app-card">
-              <h3>Settings</h3>
+              <h3>{t('Settings')}</h3>
               <div className="dock-chip-row">
-                <button>Phone Key On</button>
-                <button>Auto Connect</button>
-                <button>Discoverable</button>
+                <button>{t('Phone Key On')}</button>
+                <button>{t('Auto Connect')}</button>
+                <button>{t('Discoverable')}</button>
               </div>
             </section>
           </div>
@@ -3407,7 +3737,7 @@ function AppPane({ appName, onBackToMap }: AppPaneProps) {
         {appKey === 'spotify' && (
           <div className="dock-app-grid">
             <section className="dock-app-card">
-              <h3>Now Playing</h3>
+              <h3>{t('Now Playing')}</h3>
               <p>A PERFECT WORLD</p>
               <p>The Kid LAROI</p>
               <div className="dock-progress">
@@ -3420,12 +3750,12 @@ function AppPane({ appName, onBackToMap }: AppPaneProps) {
         {appKey === 'toybox' && (
           <div className="dock-app-grid">
             <section className="dock-app-card">
-              <h3>Toybox</h3>
+              <h3>{t('Toybox')}</h3>
               <div className="dock-chip-row">
-                <button>Rainbow Road</button>
-                <button>Boombox</button>
-                <button>Light Show</button>
-                <button>Mars Theme</button>
+                <button>{t('Rainbow Road')}</button>
+                <button>{t('Boombox')}</button>
+                <button>{t('Light Show')}</button>
+                <button>{t('Mars Theme')}</button>
               </div>
             </section>
           </div>
@@ -3434,11 +3764,11 @@ function AppPane({ appName, onBackToMap }: AppPaneProps) {
         {appKey === 'arcade' && (
           <div className="dock-app-grid">
             <section className="dock-app-card">
-              <h3>Arcade</h3>
+              <h3>{t('Arcade')}</h3>
               <div className="dock-chip-row">
-                <button>Beach Buggy</button>
-                <button>Sky Force</button>
-                <button>Chess</button>
+                <button>{t('Beach Buggy')}</button>
+                <button>{t('Sky Force')}</button>
+                <button>{t('Chess')}</button>
               </div>
             </section>
           </div>
@@ -3447,8 +3777,8 @@ function AppPane({ appName, onBackToMap }: AppPaneProps) {
         {!['phone', 'calendar', 'bluetooth', 'spotify', 'toybox', 'arcade'].includes(appKey) && (
           <div className="dock-app-grid">
             <section className="dock-app-card">
-              <h3>{appName}</h3>
-              <p>App view mapped from dock shortcut.</p>
+              <h3>{t(appName)}</h3>
+              <p>{t('App view mapped from dock shortcut.')}</p>
             </section>
           </div>
         )}
@@ -3480,11 +3810,12 @@ function OverlayLayer({
   onQuickToggle,
   onSelectApp
 }: OverlayLayerProps) {
+  const t = useTranslator();
   return (
     <div className="overlay-layer">
       {overlay.isLauncherOpen && (
         <>
-          <button className="overlay-backdrop" onClick={onCloseAll} aria-label="close overlay" />
+          <button className="overlay-backdrop" onClick={onCloseAll} aria-label={t('close overlay')} />
           <AppLauncherModal
             quickToggles={quickToggles}
             onQuickToggle={onQuickToggle}
@@ -3496,7 +3827,7 @@ function OverlayLayer({
 
       {overlay.isKeyboardOpen && (
         <>
-          <button className="overlay-backdrop" onClick={onCloseAll} aria-label="close overlay" />
+          <button className="overlay-backdrop" onClick={onCloseAll} aria-label={t('close overlay')} />
           <OnScreenKeyboard
             value={searchDraft}
             onChange={onSearchDraftChange}
@@ -3523,6 +3854,7 @@ function AppLauncherModal({
   onSelectApp,
   onClose
 }: AppLauncherModalProps) {
+  const t = useTranslator();
   const [dragOffsetY, setDragOffsetY] = useState(0);
   const dragRef = useRef<{ startY: number } | null>(null);
 
@@ -3571,7 +3903,7 @@ function AppLauncherModal({
               <span className="quick-toggle-glyph">
                 <QuickToggleIcon size={15} />
               </span>
-              <span className="quick-toggle-label">{label}</span>
+              <span className="quick-toggle-label">{t(label)}</span>
             </button>
           );
         })}
@@ -3585,11 +3917,11 @@ function AppLauncherModal({
           return (
             <button key={app.id} className="app-tile" onClick={() => onSelectApp(app)}>
               <span className="app-tile-glyph">
-                {app.iconSrc ? <img src={app.iconSrc} alt={app.label} /> : null}
+                {app.iconSrc ? <img src={app.iconSrc} alt={t(app.label)} /> : null}
                 {!app.iconSrc && AppIcon ? <AppIcon className="app-tile-icon-svg" size={16} /> : null}
                 {!app.iconSrc && !AppIcon ? app.glyph : null}
               </span>
-              <span>{app.label}</span>
+              <span>{t(app.label)}</span>
             </button>
           );
         })}
@@ -3607,6 +3939,7 @@ interface OnScreenKeyboardProps {
 }
 
 function OnScreenKeyboard({ value, onChange, onSubmit, onClose, onMic }: OnScreenKeyboardProps) {
+  const t = useTranslator();
   const [isShift, setIsShift] = useState(false);
   const [symbolMode, setSymbolMode] = useState(false);
   const [dragOffsetY, setDragOffsetY] = useState(0);
@@ -3662,7 +3995,7 @@ function OnScreenKeyboard({ value, onChange, onSubmit, onClose, onMic }: OnScree
         onPointerUp={endDrag}
         onPointerCancel={endDrag}
       />
-      <div className="keyboard-preview">{value || 'Navigate...'}</div>
+      <div className="keyboard-preview">{value || t('Navigate...')}</div>
       <div className="keyboard-shell">
         <div className="keyboard-main">
           <div className="keyboard-row">
@@ -3675,7 +4008,7 @@ function OnScreenKeyboard({ value, onChange, onSubmit, onClose, onMic }: OnScree
               className="key key-action"
               onClick={() => onChange(value.slice(0, Math.max(value.length - 1, 0)))}
             >
-              BKSP
+              {t('BKSP')}
             </button>
           </div>
 
@@ -3686,14 +4019,14 @@ function OnScreenKeyboard({ value, onChange, onSubmit, onClose, onMic }: OnScree
               </button>
             ))}
             <button className="key key-action" onClick={() => onSubmit(value)}>
-              ENTER
+              {t('ENTER')}
             </button>
           </div>
 
           <div className="keyboard-row">
             {!symbolMode && (
               <button className="key key-wide" onClick={() => setIsShift((prev) => !prev)}>
-                SHIFT
+                {t('SHIFT')}
               </button>
             )}
             {rows[2].map((key) => (
@@ -3705,16 +4038,16 @@ function OnScreenKeyboard({ value, onChange, onSubmit, onClose, onMic }: OnScree
 
           <div className="keyboard-row keyboard-row-bottom">
             <button className="key key-wide" onClick={onMic}>
-              MIC
+              {t('MIC')}
             </button>
             <button className="key key-wide" onClick={() => setSymbolMode((prev) => !prev)}>
               {symbolMode ? 'ABC' : '? # &'}
             </button>
             <button className="key key-space" onClick={() => onChange(`${value} `)}>
-              SPACE
+              {t('SPACE')}
             </button>
             <button className="key key-wide" onClick={onClose}>
-              CLOSE
+              {t('CLOSE')}
             </button>
           </div>
         </div>
